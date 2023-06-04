@@ -147,4 +147,79 @@ class LoginTest extends DuskTestCase
                 ->pause(3000);
         });
     }
+
+    /**
+     * Unit Test for Login with 2FA
+     * @group Register
+     */
+
+    public function test_register_new_user_with_2fa()
+    {
+        $user = User::factory()->make();
+
+        $this->browse(function (Browser $browser) use ($user) {
+            $browser->visit('/register')
+                ->type('name', $user->name)
+                ->type('email', $user->email)
+                ->type('password', 'password')
+                ->type('password_confirmation', 'password')
+                ->press('Register')
+                ->waitForLocation('/register')
+                ->clickLink('Complete Registration')
+		        ->assertPathIs('/email/verify')
+                ->pause(5000);
+
+            $browser->logout();
+        });
+    }
+
+    public function test_register_new_user_with_send_email()
+    {
+        $user = User::factory()->make();
+
+        $this->browse(function (Browser $browser) use ($user) {
+            $browser->visit('/register')
+                ->type('name', $user->name)
+                ->type('email', $user->email)
+                ->type('password', 'password')
+                ->type('password_confirmation', 'password')
+                ->press('Register')
+                ->waitForLocation('/register')
+                ->clickLink('Complete Registration')
+		        ->waitForLocation('/email/verify')
+                ->press('click here to request another')
+		        ->assertPathIs('/email/verify')
+                ->assertSee('A fresh verification link has been sent to your email address.')
+                ->pause(5000);
+
+            $browser->logout();
+        });
+    }
+
+    public function test_register_new_user_with_verified_email()
+    {
+        $user = User::factory()->make();
+
+        $this->browse(function (Browser $browser) use ($user) {
+            $browser->visit('/register')
+                ->type('name', $user->name)
+                ->type('email', $user->email)
+                ->type('password', 'password')
+                ->type('password_confirmation', 'password')
+                ->press('Register')
+                ->waitForLocation('/register')
+                ->clickLink('Complete Registration')
+		        ->waitForLocation('/email/verify');
+
+            $user = User::where('email', $user->email)->first();
+            $user->email_verified_at = now();
+            $user->save();
+
+            $browser->assertPathIs('/email/verify')
+                ->visit('home')
+                ->pause(5000);
+
+            $browser->logout();
+        });
+    }
 }

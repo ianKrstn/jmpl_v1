@@ -69,26 +69,29 @@ class RegisterTest extends DuskTestCase
         });
     }
 
-    // public function test_register_new_user_with_2fa()
-    // {
-    //     $user = User::factory()->make();
+    public function test_register_new_user_with_wrong_2fa()
+    {
+        $user = User::factory()->make([
+            'google2fa_secret' => app('pragmarx.google2fa')->generateSecretKey(),
+        ]);
+        $secret = $user->google2fa_secret;
 
-    //     $this->browse(function (Browser $browser) use ($user) {
-    //         $browser->visit('/register')
-    //             ->type('name', $user->name)
-    //             ->type('email', $user->email)
-    //             ->type('password', 'password')
-    //             ->type('password_confirmation', 'password')
-    //             ->press('Register')
-    //             ->waitForLocation('/register')
-    //             ->clickLink('Complete Registration')
-    //             ->waitForLocation('/home')
-    //             ->type('one_time_password', app('pragmarx.google2fa')->getCurrentOtp($user->google2fa_secret))
-    //             ->press('Login')
-	// 	        ->assertPathIs('/email/verify')
-    //             ->pause(5000);
+        $this->browse(function (Browser $browser) use ($user, $secret) {
+            $browser->visit('/register')
+                ->type('name', $user->name)
+                ->type('email', $user->email)
+                ->type('password', 'password')
+                ->type('password_confirmation', 'password')
+                ->press('Register')
+                ->waitForLocation('/register')
+                ->clickLink('Complete Registration')
+                ->waitForLocation('/home')
+                ->type('one_time_password', app('pragmarx.google2fa')->getCurrentOtp($secret))
+                ->press('Login')
+		        ->assertPathIs('/2fa')
+                ->pause(5000);
 
-    //         $browser->logout();
-    //     });
-    // }
+            $browser->logout();
+        });
+    }
 }
